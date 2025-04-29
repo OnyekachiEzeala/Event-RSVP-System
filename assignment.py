@@ -14,13 +14,6 @@ class Event(BaseModel):
     flyer_filename: Optional[str] = None
     rsvps: List[str] = []
 
-# class EventCreate(Event):
-#     title: str
-#     description: str
-#     date: str
-#     location: str
-#     flyer_filename: Optional[str] = None
-
 class RSVP(BaseModel):
     name: str
     email: str
@@ -44,7 +37,7 @@ def create_event(
     flyer: Optional[UploadFile] = File(None)
 ):
     event_id = len(events) + 1 
-    #flyer_filename = flyer.filename if flyer else None
+
     if flyer:
         flyer_filename = flyer.filename
     else:
@@ -80,18 +73,6 @@ def rsvp_to_event(
             event.rsvps.append(rsvp_details)
             return f"Congratulations!{name} is attending {event.title}"
     raise HTTPException (status_code = status.HTTP_404_NOT_FOUND, detail = "event not found")
-    
-
-#GET /events/{event_id}/rsvps
-@app.get("/events/{event_id}/rsvps", status_code = status.HTTP_200_OK)
-def list_of_rsvps(event_id: int):
-    for event in events:
-        if event.id == event_id:
-            if event.rsvps:
-                return {"Event": event.title, "RSVPs": event.rsvps}
-            else: 
-                return {"Event": event.title, "Message": "No RSVPs yet"}
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
 
 
