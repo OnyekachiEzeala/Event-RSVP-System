@@ -24,7 +24,7 @@ events: list[EventBase] = []
 @app.post("/events" , status_code=status.HTTP_201_CREATED)
 async def create_event(event : Annotated[Event, Form()]):
   event_dict = event.model_dump()
-  event_dict['id'] = str(UUID(int=len(events) + 1))
+  event_dict['id'] = len(events) + 1
   event_dict['event_create_at'] = datetime.now()
   events.append(event_dict)
   return event_dict
