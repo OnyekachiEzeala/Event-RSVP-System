@@ -26,7 +26,7 @@ async def event(
   description: Annotated[str, Form()],
   date: Annotated[str, Form()],
   location: Annotated[str, Form()],
-  flyer_name: Optional[UploadFile] = File(None)
+  # flyer_name: Optional[UploadFile] = File(None)
 ):
   event_id =str(UUID(int=len(events) + 1))
   events.append(Event)
@@ -37,8 +37,7 @@ async def event(
     "title": title,
     "description": description,
     "date": date,
-    "location": location,
-    "flyer_name": flyer_name.filename
+    "location": location
   }
   
   return {"Message" : "Event created successfully!", "event_data" : item_data}
