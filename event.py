@@ -15,16 +15,16 @@ class EventBase(BaseModel):
   # flyer: Optional[Annotated[UploadFile, Form()]]
   # rsvp: list[Annotated[str, Form()]]
 
-class CreateEvent(EventBase):
+class Event(EventBase):
   pass
 
-events: list[CreateEvent] = []
+events: list[EventBase] = []
 
 # =======Post an Event=======
 @app.post("/events" , status_code=status.HTTP_201_CREATED)
-async def create_event(event : Annotated[CreateEvent, Form()]):
+async def create_event(event : Annotated[Event, Form()]):
   event_dict = event.model_dump()
-  event_dict['id'] =str(UUID(int=len(events) + 1))
+  event_dict['id'] = str(UUID(int=len(events) + 1))
   event_dict['event_create_at'] = datetime.now()
   events.append(event_dict)
   return event_dict
@@ -33,5 +33,5 @@ async def create_event(event : Annotated[CreateEvent, Form()]):
 @app.get("/events", status_code=status.HTTP_200_OK)
 async def list_event():
   if not events:
-    raise HTTPException(status_code=status.HTTP_204_NO_CONTENT)
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
   return events
