@@ -14,7 +14,7 @@ class EventBase(BaseModel):
   date : datetime = datetime.now().date()
   # flyer: Optional[Annotated[UploadFile, Form()]]
   # rsvp: list[Annotated[str, Form()]]
-
+ 
 class CreateEvent(EventBase):
   pass
 
@@ -35,3 +35,14 @@ async def list_event():
   if not events:
     raise HTTPException(status_code=status.HTTP_204_NO_CONTENT)
   return events
+
+
+# ========RSVP Processing and Listing========
+
+@app.post("/events/{event_id}/rsvp", status_code=status.HTTP_201_CREATED)
+async def rsvp_event(event_id: str, name: str = Form(...), email: str = Form(...)):
+  if event_id not in rsvps:
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+  rsvp = RSVP(name=name, email=email)
+  rsvps[event_id].append(rsvp)
+  return {"message": "RSVP successful", "rsvp": rsvp}
