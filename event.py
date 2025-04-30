@@ -24,7 +24,7 @@ events: list[EventBase] = []
 @app.post("/events" , status_code=status.HTTP_201_CREATED)
 async def create_event(event : Annotated[Event, Form()]):
   event_dict = event.model_dump()
-  event_dict['id'] = str(UUID(int=len(events) + 1))
+  event_dict['id'] = len(events) + 1 
   event_dict['event_create_at'] = datetime.now()
   events.append(event_dict)
   return event_dict
@@ -35,3 +35,11 @@ async def list_event():
   if not events:
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
   return events
+
+# ========Get Events by ID========
+@app.get ("/events/{event_id}", status_code = status.HTTP_200_OK)
+def get_event_by_id(event_id:int):
+    for event in events:
+        if event["id"] == event_id:
+            return event
+    raise HTTPException(status_code=404, detail="Event not found")
