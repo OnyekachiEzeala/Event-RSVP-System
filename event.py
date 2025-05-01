@@ -1,32 +1,41 @@
 from typing import Annotated, Optional
-from datetime import datetime
+from datetime import datetime,date
 from fastapi import FastAPI, File, UploadFile, Form, status, HTTPException
-from pydantic import BaseModel
-from uuid import UUID
+from pydantic import BaseModel, EmailStr
+from uuid import uuid4
 
 app = FastAPI()
 
 
 class EventBase(BaseModel):
+  id: int
   title: str
   description: str
   location: str
-  date : datetime = datetime.now().date()
+  date : date
   # flyer: Optional[Annotated[UploadFile, Form()]]
   # rsvp: list[Annotated[str, Form()]]
- 
-class CreateEvent(EventBase):
-  pass
 
-events: list[CreateEvent] = []
+class Event(EventBase):
+  id: str
+  event_create_at: datetime
+
+class RSVP(BaseModel):
+  name: str
+  email: EmailStr
+
+
+events: list[EventBase] = []
+rsvps: dict[str, list[RSVP]] = {}
 
 # =======Post an Event=======
-@app.post("/events" , status_code=status.HTTP_201_CREATED)
-async def create_event(event : Annotated[EventBase, Form()]):
+@app.post("/events" , response_model=Event, status_code=status.HTTP_201_CREATED)
+async def create_event(event : Annotated[Event, Form()]):
   event_dict = event.model_dump()
-  event_dict['id'] =str(UUID(int=len(events) + 1))
+  event_dict['id']= str(uuid4())
   event_dict['event_create_at'] = datetime.now()
   events.append(event_dict)
+  rsvps[event_dict['id']] = []
   return event_dict
 
 # =========Listing the Events======
@@ -46,3 +55,5 @@ async def rsvp_event(event_id: str, name: str = Form(...), email: str = Form(...
   rsvp = RSVP(name=name, email=email)
   rsvps[event_id].append(rsvp)
   return {"message": "RSVP successful", "rsvp": rsvp}
+
+
