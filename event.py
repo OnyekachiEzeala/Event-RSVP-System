@@ -1,59 +1,76 @@
 from typing import Annotated, Optional
 from datetime import datetime,date
-from fastapi import FastAPI, File, UploadFile, Form, status, HTTPException
-from pydantic import BaseModel, EmailStr
-from uuid import uuid4
+from fastapi import FastAPI, File, UploadFile, Form, status, HTTPException, Depends
+from pydantic import BaseModel
+from uuid import UUID
 
 app = FastAPI()
 
 
 class EventBase(BaseModel):
-  id: int
   title: str
   description: str
   location: str
   date : date
-  # flyer: Optional[Annotated[UploadFile, Form()]]
-  # rsvp: list[Annotated[str, Form()]]
+  flyer: Optional[UploadFile] = None
+  rsvp: list [str] = []
 
 class Event(EventBase):
-  id: str
-  event_create_at: datetime
+  pass
 
 class RSVP(BaseModel):
   name: str
-  email: EmailStr
+  email: str
 
 
 events: list[EventBase] = []
-rsvps: dict[str, list[RSVP]] = {}
+# rsvps: dict[str, list[RSVP]] = {}
+
+# store_email = []
 
 # =======Post an Event=======
-@app.post("/events" , response_model=Event, status_code=status.HTTP_201_CREATED)
+@app.post("/events" , status_code=status.HTTP_201_CREATED)
 async def create_event(event : Annotated[Event, Form()]):
   event_dict = event.model_dump()
-  event_dict['id']= str(uuid4())
+  event_dict['id'] = len(events) + 1 
   event_dict['event_create_at'] = datetime.now()
   events.append(event_dict)
-  rsvps[event_dict['id']] = []
   return event_dict
 
 # =========Listing the Events======
 @app.get("/events", status_code=status.HTTP_200_OK)
 async def list_event():
   if not events:
-    raise HTTPException(status_code=status.HTTP_204_NO_CONTENT)
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
   return events
 
+# ========Get Events by ID========
+@app.get ("/events/{event_id}", status_code = status.HTTP_200_OK)
+def get_event_by_id(event_id:int):
+    for event in events:
+        if event["id"] == event_id:
+            return event
+    raise HTTPException(status_code=404, detail="Event not found")
 
-# ========RSVP Processing and Listing========
+
+
+# def check_if_user_exists(email: str):
+#     for event in events:
+#         if event.email == email:
+#             return True
+#     return False
 
 @app.post("/events/{event_id}/rsvp", status_code=status.HTTP_201_CREATED)
-async def rsvp_event(event_id: str, name: str = Form(...), email: str = Form(...)):
-  if event_id not in rsvps:
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
-  rsvp = RSVP(name=name, email=email)
-  rsvps[event_id].append(rsvp)
-  return {"message": "RSVP successful", "rsvp": rsvp}
-
-
+async def rsvp_event(event_id:int, response: Annotated[RSVP, Form()]):
+  
+  # if not check_if_user_exists(response.email):
+  #   raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User already exists")
+  # 1. Find the event
+  for event in events:
+    if event["id"] == event_id:
+        return {
+            "message": f"RSVP received for event {event_id}",
+            "rsvp": response,
+        }
+  # 3. If not found, return 404
+  raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
