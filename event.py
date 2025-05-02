@@ -1,4 +1,4 @@
-from typing import Annotated, Optional
+from typing import Annotated, List, Optional
 from datetime import datetime,date
 from fastapi import FastAPI, File, UploadFile, Form, status, HTTPException, Depends
 from pydantic import BaseModel
@@ -8,12 +8,14 @@ app = FastAPI()
 
 
 class EventBase(BaseModel):
-  title: str
-  description: str
-  location: str
-  date : date
-  flyer: Optional[UploadFile] = None
-  rsvp: list [str] = []
+    title: str
+    description: str
+    location: str
+    id: int
+    event_create_at: datetime
+    date: date
+    flyer: Optional[str] = None  # Store filename as string
+    rsvp: List[str] = []
 
 class Event(EventBase):
   pass
@@ -24,18 +26,37 @@ class RSVP(BaseModel):
 
 
 events: list[EventBase] = []
-# rsvps: dict[str, list[RSVP]] = {}
 
-# store_email = []
+
 
 # =======Post an Event=======
-@app.post("/events" , status_code=status.HTTP_201_CREATED)
-async def create_event(event : Annotated[Event, Form()]):
-  event_dict = event.model_dump()
-  event_dict['id'] = len(events) + 1 
-  event_dict['event_create_at'] = datetime.now()
-  events.append(event_dict)
-  return event_dict
+@app.post("/events", status_code=status.HTTP_201_CREATED)
+async def create_event(
+    title: Annotated[str, Form()],
+    description: Annotated[str, Form()],
+    location: Annotated[str, Form()],
+    date: Annotated[date, Form()],
+    flyer: Optional[UploadFile] = File(None),
+    rsvp: Annotated[List[str], Form()] = []
+):
+    # Create a new event
+    print(f"Received flyer: {flyer.filename if flyer else 'No file uploaded'}")
+    event_data = {
+        "title": title,
+        "description": description,
+        "location": location,
+        "date": date,
+        "rsvp": rsvp,
+        "flyer": flyer.filename if flyer is not None else None,
+        "id": len(events) + 1,
+        "event_create_at": datetime.now()
+    }
+    
+    # Add to events list
+    events.append(event_data)
+    
+    # Return the created event
+    return event_data
 
 # =========Listing the Events======
 @app.get("/events", status_code=status.HTTP_200_OK)
