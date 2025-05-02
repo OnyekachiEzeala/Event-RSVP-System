@@ -40,7 +40,9 @@ async def create_event(
     rsvp: Annotated[List[str], Form()] = []
 ):
     # Create a new event
-    print(f"Received flyer: {flyer.filename if flyer else 'No file uploaded'}")
+    # event data is used to create a new event in dictionary
+    # flyer is an optional file upload
+    # flyer.filename is used to store the filename
     event_data = {
         "title": title,
         "description": description,
