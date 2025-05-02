@@ -54,10 +54,6 @@ def get_event_by_id(event_id:int):
 
 
 
-<<<<<<< HEAD
-@app.post("/events/{event_id}/rsvp", status_code=status.HTTP_201_CREATED)
-async def rsvp_event(event_id:int, response: Annotated[RSVP, Form()]):
-=======
 # def check_if_user_exists(email: str):
 #     for event in events:
 #         if event.email == email:
@@ -70,17 +66,23 @@ async def rsvp_event(event_id:int, response: Annotated[RSVP, Form()]):
   # if not check_if_user_exists(response.email):
   #   raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User already exists")
   # 1. Find the event
->>>>>>> 1df64985963b7c01aea01511c1fa599c5a3d0021
   for event in events:
     if event["id"] == event_id:
+        rsvp_data = response.model_dump()
+        if "rsvp" not in event:
+           event["rsvp"] = []
+        event["rsvp"].append(rsvp_data)
         return {
             "message": f"RSVP received for event {event_id}",
             "rsvp": response,
         }
-<<<<<<< HEAD
-
-  raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
-=======
   # 3. If not found, return 404
   raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
->>>>>>> 1df64985963b7c01aea01511c1fa599c5a3d0021
+
+
+@app.get("/events/{event_id}/rsvps", status_code=status.HTTP_200_OK)
+def list_rsvps(event_id:int):
+   for event in events:
+      if event["id"] == event_id:
+         return event.get("rsvp", [])
+   raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Event not found')
